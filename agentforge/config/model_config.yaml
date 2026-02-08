@@ -1,0 +1,14 @@
+llm:
+  provider: "ollama"
+  model: "qwen2.5:3b"
+  temperature: 0.7
+  timeout: 120
+
+embeddings:
+  provider: "ollama"
+  model: "nomic-embed-text"
+  base_url: "http://localhost:11434"
+
+vector_db:
+  path: "./data/vectordb"
+  collection_name: "agentforge_knowledge"
