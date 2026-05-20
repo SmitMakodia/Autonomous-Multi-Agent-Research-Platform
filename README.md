@@ -1,168 +1,279 @@
-# 🤖 AgentForge: Autonomous Multi-Agent Research Platform
+<div align="center">
 
-![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=for-the-badge&logo=python&logoColor=white)
-![Ollama](https://img.shields.io/badge/LLM-Ollama%20Local-orange?style=for-the-badge)
-![CrewAI](https://img.shields.io/badge/Agent%20Framework-CrewAI-purple?style=for-the-badge)
-![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
+# 🌌 AgentForge
+### The Autonomous, Zero-Bloat, Multi-Agent RAG Platform
 
-**AgentForge** is a production-grade, autonomous multi-agent research platform designed to run **100% locally** on consumer hardware (e.g., NVIDIA RTX 3060). It leverages a squad of specialized AI agents to orchestrate deep research, synthesize findings from both the live web and internal knowledge bases (RAG), and generate comprehensive, cited reports.
+[![Python](https://img.shields.io/badge/Python-3.12-blue.svg?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
+[![SQLite](https://img.shields.io/badge/SQLite-07405E?style=for-the-badge&logo=sqlite&logoColor=white)](https://sqlite.org/)
+[![Llama.cpp](https://img.shields.io/badge/Llama.cpp-black?style=for-the-badge&logo=c%2B%2B)](https://github.com/ggerganov/llama.cpp)
+[![Playwright](https://img.shields.io/badge/Playwright-2EAD33?style=for-the-badge&logo=Playwright&logoColor=white)](https://playwright.dev/)
 
----
+*A completely local, fully offline AI research assistant featuring intelligent VRAM swapping, deep web scraping, and a breathtaking Perplexity-style UI.*
 
-## 📺 Project Demo
-
-[![Watch the Demo](https://img.youtube.com/vi/uJYopUFqIsM/maxresdefault.jpg)](https://www.youtube.com/watch?v=uJYopUFqIsM)
-
-> *Click the thumbnail above to watch the full walkthrough of AgentForge in action.*
+</div>
 
 ---
 
-## 🏗️ Technical Architecture
+## ⚡ Overview
 
-AgentForge employs a hierarchical multi-agent architecture where a **Master Planner** delegates tasks to specialized execution agents. The system utilizes a **ReAct (Reasoning + Acting)** pattern to ensure transparent decision-making.
+**AgentForge** is not just another wrapper. It is a highly optimized, completely autonomous multi-agent research platform designed to run on consumer hardware (e.g., RTX 3060 6GB). It orchestrates a swarm of specialized agents that can browse the live internet, scrape JavaScript-heavy websites, parse complex PDF documents, and perform high-fidelity Vision OCR—all while managing its own memory and VRAM dynamically.
+
+No API keys. No cloud dependencies. No bloated vector databases. Just pure, unadulterated local AI power.
+
+---
+
+## ✨ Key Features
+
+### 🧠 Intelligent VRAM Management (Hot-Swapping)
+Running a large language model and a massive vision model simultaneously on a 6GB GPU will instantly crash your system. AgentForge solves this elegantly:
+- The system runs the fast **Qwen3.5-4B** model as the core brain via `llama.cpp`.
+- When you upload an image, AgentForge **suspends Qwen**, flushing 100% of it from VRAM.
+- It dynamically loads the official **GLM-OCR** (Safetensors) model directly onto the GPU, processes the image at lightning speed, wipes the GPU memory cleanly via PyTorch garbage collection, and resumes Qwen seamlessly.
+
+### 🕸️ Deep Web Search & Crawl (Hybrid Engine)
+AgentForge bypasses standard API rate-limits by employing a robust, anti-bot fallback chain:
+1. **Search:** Uses `DuckDuckGo` (`ddgs`) to securely find the top URLs.
+2. **Primary Scrape:** Bootstraps **Crawl4AI** using a headless Chromium browser to execute JavaScript, bypass Cloudflare/bot-protections, and extract clean semantic Markdown.
+3. **Fallback:** If a website blocks headless browsers, it instantly falls back to a custom `BeautifulSoup` + `markdownify` Python scraper to guarantee context injection.
+
+### 💾 Zero-Bloat SQLite RAG
+We stripped out heavy memory hogs like ChromaDB. AgentForge uses a hyper-optimized, pure **SQLite** memory architecture:
+- Context chunks and CPU-generated embeddings are serialized directly into an `agentforge.db` file.
+- **Session Isolation:** Each chat is strictly isolated. Vector cosine-similarity is computed via NumPy instantly in RAM, ensuring zero memory leak across different sessions.
+
+### 🎨 Perplexity-Style UI
+A gorgeous, modern, zero-scrollbars frontend built with Vanilla JS and CSS (No React/Node.js bloat):
+- **Glassmorphism Design:** Dark mode, translucent overlays, and an interactive particle physics background canvas.
+- **Live "Thinking" Stream:** Watch the AI's internal reasoning stream live into a collapsible UI block (styled with a sleek Lightbulb icon) before it generates the final answer.
+- **Source Cards & Context Modals:** View exactly what websites and files the AI read through beautiful, clickable Source Cards and an expandable raw context modal.
+
+---
+
+## ⚙️ Architecture Flow
+
+```mermaid
+graph TD;
+    User((User)) -->|Prompt + Files| UI[Glassmorphism UI]
+    UI -->|FastAPI| API[Main Endpoint]
+    
+    API --> Routing{File Attached?}
+    Routing -->|Yes: Image| VRAM[VRAM Swap: Pause Qwen -> Run GLM-OCR -> Resume Qwen]
+    Routing -->|Yes: PDF/Doc| FILE[File Read Agent]
+    Routing -->|No| ORCH[Orchestrator]
+    
+    VRAM --> SQL[(SQLite RAG Memory)]
+    FILE --> SQL
+    
+    ORCH --> SEARCH[Web Search Agent]
+    SEARCH --> DDG[DuckDuckGo]
+    DDG --> CRAWL[Crawl4AI Headless Chromium]
+    CRAWL --> SQL
+    
+    SQL --> |Top 10 Chunks| LLM[Llama.cpp Qwen3.5]
+    LLM --> |Streaming Markdown| UI
+```
+
+---
+
+## 🚀 Installation & Setup
+
+### 1. Prerequisites
+- **OS:** Windows 10/11
+- **Python:** 3.12+
+- **GPU:** NVIDIA GPU with CUDA support (Minimum 6GB VRAM recommended)
+
+### 2. Clone the Repository
+```bash
+git clone https://github.com/yourusername/AgentForge.git
+cd AgentForge
+```
+
+### 3. Automatic Setup
+AgentForge comes with a fully automated setup script that creates your virtual environment, installs all pip dependencies, and downloads the required AI models.
+
+Simply open PowerShell as Administrator and run:
+```powershell
+.\setup_infrastructure.ps1
+```
+
+*Note: The script will download several gigabytes of models (Qwen3.5-4B GGUF and GLM-OCR Safetensors). Please be patient!*
+
+### 4. GPU Acceleration (Crucial)
+To ensure the Vision OCR model runs on your GPU and not your CPU, you must install the CUDA-enabled version of PyTorch.
+Open your activated virtual environment and run:
+```bash
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+```
+
+---
+
+## 🕹️ Usage
+
+AgentForge features absolute one-click operation via Windows Batch files.
+
+### Starting the Platform
+Simply double-click:
+📄 `start_agentforge.bat`
+
+**What it does:**
+1. Cleans any ghost processes on port `8081`.
+2. Activates the Python virtual environment.
+3. Launches the FastAPI backend and natively clones pristine `[filename:line]` terminal logs into `logs/log.log`.
+4. Automatically opens `http://localhost:8081` in your default web browser.
+
+### Stopping the Platform
+Simply double-click:
+📄 `stop_agentforge.bat`
+
+**What it does:**
+1. Gracefully shuts down the FastAPI server.
+2. Force-kills the `llama.cpp` process, instantly freeing 100% of your VRAM.
+3. Closes the terminal windows.
+
+---
+
+## 📂 Project Structure
+
+```text
+AgentForge/
+├── backend/
+│   ├── agents/               # Swarm logic (Search, Scrape, OCR, File Read)
+│   ├── llm/                  # Llama.cpp streaming client & SQLite Memory Manager
+│   ├── mcp_layer/            # Tool Routing and Execution
+│   ├── rag/                  # Embeddings, Retriever, Vector Store
+│   ├── config.py             # Global constants
+│   ├── logger_setup.py       # Custom stdout/stderr OS-level interceptor
+│   └── main.py               # FastAPI Endpoints
+├── frontend/
+│   ├── static/               # Highlight.js & Marked.js
+│   ├── app.js                # SSE streaming, UI logic, Particle Physics
+│   ├── index.html            # Main UI Layout
+│   └── style.css             # Glassmorphism & Perplexity styling
+├── logs/                     # Single unified log.log file
+├── models/                   # Local weights (Qwen GGUF, GLM-OCR)
+├── uploads/                  # User uploaded documents
+├── start_agentforge.bat      # One-click startup
+└── stop_agentforge.bat       # One-click graceful teardown
+```
+
+---
+
+
+
+# AgentForge Comprehensive System Architecture
+
+This diagram provides a high-level, easy-to-understand overview of the AgentForge platform. It focuses on the logical flow, agent interactions, tools, and the hardware management process without getting bogged down in specific filenames.
 
 ```mermaid
 ---
 config:
   layout: elk
 ---
-flowchart 
- subgraph subGraph0["Orchestration Layer"]
-        Researcher["Research Agent"]
-        Planner["Master Planner Agent"]
-        Knowledge["Knowledge Agent"]
-        Critic["Critic & Synthesis Agent"]
-  end
- subgraph subGraph1["Tool Layer"]
-        Web["DuckDuckGo / Wikipedia / ArXiv"]
-        Scraper["Web Scraper"]
-        VectorDB[("ChromaDB - Internal KB")]
-  end
- subgraph subGraph2["Output Layer"]
-  end
-    User["User Input"] --> Planner
-    Planner -- Delegates Tasks --> Researcher & Knowledge & Critic
-    Researcher -- Searches --> Web
-    Researcher -- Scrapes --> Scraper
-    Knowledge -- Queries --> VectorDB
-    Researcher -- External Findings --> Critic
-    Knowledge -- Internal Context --> Critic
-    Critic -- Drafts Report --> Planner
-    Critic -- "Self-Correction" --> Critic
-    Planner -- Final Report --> UI["Streamlit Dashboard"]
-```
+flowchart TB
 
-### 🧠 The Agent Squad
+    subgraph User_Interface ["User Interface"]
+        User(("User"))
+        UI["Glassmorphism UI<br>(Chat & File Uploads)"]
+    end
 
-1.  **🧠 Master Planner Agent**: The strategist. Decomposes complex user queries into actionable subtasks (e.g., "Research X," "Check internal docs for Y," "Compare X and Y").
-2.  **🔍 Research Agent**: The explorer. Scours the internet (DuckDuckGo, Wikipedia, ArXiv) for real-time, external information. Handles rate limits and verifies source credibility.
-3.  **💾 Knowledge Agent (RAG)**: The archivist. Retrieves proprietary or internal information from the local Vector Database (ChromaDB) to provide context that the public internet doesn't have.
-4.  **✍️ Critic Agent**: The editor. Synthesizes all information, checks for factual consistency, ensures every claim is cited, and generates the final professional report.
+    subgraph API_Gateway ["API Gateway"]
+        Endpoints["API Endpoints<br>(Query, Stream, History)"]
+    end
 
----
+    subgraph Orchestration ["Core Orchestration"]
+        Orchestrator["Main Orchestrator"]
+        PromptBuilder["System Prompt Builder"]
+    end
 
-## 🚀 Key Features
+    subgraph Swarm_Agents ["Agent Swarm"]
+        Router["Tool Router (MCP)"]
+        WebSearch["Web Search Agent"]
+        WebScrape["Web Scrape Agent"]
+        FileRead["File Read Agent"]
+        OCR["Vision OCR Agent"]
+    end
 
-*   **⚡ 100% Local Execution**: Runs entirely on your hardware using **Ollama** (powered by `qwen2.5:3b`) for zero inference costs and maximum privacy.
-*   **🔗 Hybrid RAG Pipeline**: Seamlessly combines external web search with internal document retrieval for holistic answers.
-*   **🛠️ Robust Tooling**:
-    *   **Web Search**: DuckDuckGo for general queries.
-    *   **Academic Search**: ArXiv for scientific papers.
-    *   **Scraping**: Custom scraper to read full page content.
-    *   **Vector Search**: Semantic retrieval from local documents.
-*   **🧠 Episodic Memory**: Remembers past research missions to avoid redundant work, stored in a local SQLite database.
-*   **📊 Transparent Observability**: Real-time "Matrix-style" logs show exactly what each agent is doing (Thought -> Action -> Observation).
-*   **🖥️ Production-Ready UI**: Feature-rich **Streamlit** dashboard with:
-    *   **Research Tab**: Main interface for running missions.
-    *   **History Tab**: View and review past reports.
-    *   **Knowledge Base Tab**: Manage ingested documents.
-    *   **Live Logs Tab**: Debug agent actions in real-time.
+    subgraph External_Tools ["Web & Scraping Engine"]
+        DDG["DuckDuckGo Search"]
+        Crawl4AI["Crawl4AI (Headless Browser)"]
+        BS4["BeautifulSoup (Fallback)"]
+    end
 
----
+    subgraph Memory_RAG ["RAG & Memory (SQLite)"]
+        VectorStore["Vector Store (Chunks & Embeddings)"]
+        Retriever["Retriever (Cosine Sim & BM25)"]
+        History["Chat History Manager"]
+    end
 
-## 🛠️ Installation & Setup
+    subgraph Hardware_LLM ["VRAM Management & AI Models"]
+        VRAM_Manager["VRAM Controller"]
+        Qwen["Qwen3.5 (LLM)"]
+        GLM_OCR["GLM-OCR (Vision Model)"]
+        XMLParser["XML Output Parser"]
+    end
 
-### Prerequisites
+    %% Interaction Flow
+    User -- Prompts & Files --> UI
+    UI -- Sends Data --> Endpoints
+    Endpoints -- Triggers --> Orchestrator
+    
+    %% Agent Routing
+    Orchestrator -- Evaluates Request --> Router
+    Orchestrator -- Direct File Intercept --> FileRead
+    Orchestrator -- Direct Image Intercept --> OCR
+    
+    Router -- Dispatches --> WebSearch & WebScrape
+    
+    %% Scraping Flow
+    WebSearch -- Queries --> DDG
+    DDG -- Top URLs --> Crawl4AI
+    WebScrape -- Scrapes URL --> Crawl4AI
+    Crawl4AI -- If Blocked/Timeout --> BS4
+    
+    %% VRAM Swapping Flow (The Hardware Dance)
+    OCR -- 1. Request Swap --> VRAM_Manager
+    VRAM_Manager -- 2. Unloads --> Qwen
+    VRAM_Manager -- 3. Loads --> GLM_OCR
+    GLM_OCR -- 4. Extracts Text --> OCR
+    VRAM_Manager -- 5. Reloads --> Qwen
+    
+    %% RAG Flow
+    WebSearch & WebScrape & FileRead & OCR -- Saves Extracted Data --> VectorStore
+    Orchestrator -- Searches Knowledge --> Retriever
+    Retriever -- Fetches Context --> VectorStore
+    Retriever -- Assembles Context --> PromptBuilder
+    
+    %% LLM Execution & Output
+    PromptBuilder -- Feeds Strict Prompt --> Qwen
+    Qwen -- Streams Raw Tokens --> XMLParser
+    XMLParser -- Separates Reasoning & Answer --> Orchestrator
+    
+    %% Final Output
+    Orchestrator -- Streams Markdown Live --> UI
+    Orchestrator -- Saves Conversation --> History
+    History -- Loads Past Sessions --> UI
 
-*   **OS**: Windows (tested), Linux, or macOS.
-*   **Python**: 3.10 or higher.
-*   **Ollama**: Installed and running.
-
-### 1. Setup Ollama (Local LLM)
-AgentForge relies on Ollama. Ensure it is installed from [ollama.com](https://ollama.com).
-
-Open your terminal and pull the required models:
-```powershell
-# Core LLM for Agents
-ollama pull qwen2.5:3b
-
-# Embedding Model for RAG
-ollama pull nomic-embed-text
-```
-
-### 2. Clone & Install
-```bash
-git clone https://github.com/your-username/agentforge.git
-cd agentforge
-
-# Run the setup script (Windows PowerShell) to create venv and install dependencies
-.\setup.ps1
-```
-
----
-
-## 💻 Usage Guide
-
-### 1. Start the Platform
-Launch the main user interface:
-```powershell
-.\venv\Scripts\streamlit run agentforge/ui/streamlit_app.py
-```
-This will open `http://localhost:8501` in your browser.
-
-### 2. Ingest Knowledge (Optional)
-To make the **Knowledge Agent** effective, you need to feed it data.
-1.  Place PDF, Markdown (`.md`), or Text (`.txt`) files into `agentforge/data/knowledge_base/`.
-2.  Run the ingestion script:
-    ```powershell
-    .\venv\Scripts\python agentforge/scripts/ingest_documents.py
-    ```
-    *This creates vector embeddings of your documents so the agent can "read" them.*
-
-### 3. Run a Research Mission
-1.  Go to the **"Research & Analysis"** tab.
-2.  Enter a detailed query.
-    *   *Example 1 (Web Only)*: "What were the key announcements at NVIDIA GTC 2024?"
-    *   *Example 2 (Hybrid)*: "Compare the rise of [Internal Company] (from our docs) with OpenAI."
-3.  Click **"Start Research Mission"**.
-4.  Watch the agents collaborate in the **"Live Logs"** tab or the status expander.
-
----
-
-## 📂 Project Structure
+    %% Styling
+    classDef ui fill:#1e1e20,stroke:#00d2ff,stroke-width:2px,color:#fff
+    classDef core fill:#28282a,stroke:#3a7bd5,stroke-width:2px,color:#fff
+    classDef agent fill:#1a365d,stroke:#00e676,stroke-width:2px,color:#fff
+    classDef memory fill:#3e2723,stroke:#ffb300,stroke-width:2px,color:#fff
+    classDef hardware fill:#311b92,stroke:#ff3d00,stroke-width:2px,color:#fff
+    
+    class UI,User ui
+    class Endpoints,Orchestrator,PromptBuilder,Router core
+    class WebSearch,WebScrape,FileRead,OCR,DDG,Crawl4AI,BS4 agent
+    class VectorStore,Retriever,History memory
+    class VRAM_Manager,Qwen,GLM_OCR,XMLParser hardware
 
 ```
-agentforge/
-├── agents/             # Agent definitions (Planner, Researcher, etc.)
-├── tools/              # Tool implementations (Search, Scraper, RAG)
-├── workflows/          # Orchestration logic (CrewAI setup)
-├── memory/             # Vector Store (ChromaDB) & SQLite history
-├── ui/                 # Streamlit dashboard code
-├── api/                # FastAPI backend (optional endpoint)
-├── data/               # Knowledge base & Vector DB storage
-└── monitoring/         # Logging configuration
-```
 
----
 
-## 🛡️ Privacy & Security
-*   **Data Privacy**: All documents and vector embeddings are stored **locally** on your machine. No data is sent to the cloud.
-*   **Zero-Cost**: Uses local open-source models; no API keys or credits required.
 
----
 
-## 🤝 Contributing
-Contributions are welcome! Please fork the repository and submit a Pull Request.
 
----
-
+<div align="center">
+  <i>Built with absolute precision. Engineered for autonomy.</i><br>
+  <b>Welcome to AgentForge.</b>
+</div>

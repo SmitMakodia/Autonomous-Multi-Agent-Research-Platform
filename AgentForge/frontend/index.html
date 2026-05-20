@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgentForge</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="static/marked.min.js"></script>
+    <script src="static/highlight.min.js"></script>
+    <link rel="stylesheet" href="static/atom-one-dark.min.css">
+</head>
+<body>
+    <canvas id="bg-canvas"></canvas>
+    <div class="glass-overlay"></div>
+
+    <div id="context-modal" class="file-popup" style="display: none; width: 80%; max-width: 800px; height: 80vh; max-height: 800px; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 0; flex-direction: column; animation: fadeIn 0.3s;">
+        <div style="padding: 16px; border-bottom: 1px solid var(--color-glass-border); display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="color: #fff; margin: 0;">RAG Context Provided to AI</h3>
+            <button id="context-close-btn" style="background:transparent; border:none; color:var(--color-text-muted); cursor:pointer;">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        </div>
+        <div id="context-modal-content" style="flex: 1; padding: 16px; overflow-y: auto; white-space: pre-wrap; font-family: var(--font-mono); font-size: 0.85rem; color: #ccc;"></div>
+    </div>
+
+    <div id="file-popup" class="file-popup" style="display: none;">
+        <div class="popup-content">
+            <h3 style="color: var(--color-warning); margin-bottom: 8px;">Unsupported File Type</h3>
+            <p id="popup-message"></p>
+            <button id="popup-close-btn" style="background:transparent; border:1px solid #fff; color:#fff; padding:6px 12px; border-radius:6px; margin-top:15px; cursor:pointer;">Close</button>
+        </div>
+        <div class="popup-timer" id="popup-timer"></div>
+    </div>
+    
+    <div class="app-container">
+        <!-- Left Sidebar: Threads -->
+        <nav class="sidebar">
+            <div class="sidebar-logo">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 22h20L12 2z"/></svg>
+                <h2>AgentForge</h2>
+            </div>
+            
+            <button id="new-chat-btn" class="nav-btn">
+                <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                New Thread
+            </button>
+
+            <div class="sidebar-section">
+                <h3>Library</h3>
+                <ul id="session-list" class="nav-list"></ul>
+            </div>
+        </nav>
+
+        <!-- Middle: Chat Content -->
+        <main class="chat-main">
+            <div class="chat-thread-container" id="chat-thread">
+                <div class="welcome-screen" id="welcome-screen">
+                    <h1>Where knowledge begins</h1>
+                    <div class="suggestion-grid">
+                        <div class="suggestion-card" onclick="document.getElementById('prompt-input').value=this.innerText; document.getElementById('prompt-input').focus();">Explain quantum computing simply</div>
+                        <div class="suggestion-card" onclick="document.getElementById('prompt-input').value=this.innerText; document.getElementById('prompt-input').focus();">Summarize the latest AI news</div>
+                        <div class="suggestion-card" onclick="document.getElementById('prompt-input').value=this.innerText; document.getElementById('prompt-input').focus();">How to optimize React performance?</div>
+                        <div class="suggestion-card" onclick="document.getElementById('prompt-input').value=this.innerText; document.getElementById('prompt-input').focus();">Write a python script for web scraping</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Bottom Input Area -->
+            <div class="input-container">
+                <div class="chat-form-wrapper">
+                    <div class="file-preview" id="file-list"></div>
+                    <div class="input-row">
+                        <button class="attach-btn" onclick="document.getElementById('file-input').click()" title="Attach File">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                        </button>
+                        <input type="file" id="file-input" style="display: none;" multiple>
+                        
+                        <textarea id="prompt-input" placeholder="Ask anything..." rows="1"></textarea>
+                        
+                        <button type="button" id="stop-btn" class="stop-btn" style="display: none;" title="Stop Inference">
+                            <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M6 6h12v12H6z"></path></svg>
+                        </button>
+                        
+                        <button type="button" id="send-btn" class="send-btn">
+                            <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="footer-text">AgentForge can make mistakes. Consider verifying important information.</div>
+            </div>
+        </main>
+
+        <!-- Right Sidebar: Stats / Agents -->
+        <aside class="stats-sidebar">
+            <div class="sidebar-section">
+                <h3>Swarm Status</h3>
+                <div id="agent-status" class="agent-status-panel">
+                    <ul id="agent-status-list"></ul>
+                </div>
+            </div>
+        </aside>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

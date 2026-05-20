@@ -1,0 +1,24 @@
+# Web Framework
+fastapi
+uvicorn[standard]
+python-multipart
+sse-starlette
+aiofiles
+
+# HTTP & Web Scraping
+httpx
+crawl4ai
+beautifulsoup4
+markdownify
+duckduckgo-search
+
+# AI / ML / Embeddings
+torch
+transformers
+sentence-transformers
+tiktoken
+rank-bm25
+pillow
+
+# Note: For GPU support with GLM-OCR, install PyTorch with CUDA:
+# pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
