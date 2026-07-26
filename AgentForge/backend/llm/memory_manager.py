@@ -115,6 +115,10 @@ class MemoryManager:
         conn = get_connection()
         c = conn.cursor()
         c.execute("DELETE FROM messages WHERE session_id=?", (session_id,))
+        # Deleted explicitly: sqlite3 leaves PRAGMA foreign_keys off by default, so the
+        # ON DELETE CASCADE declared on chunks never fired. Every embedding from every
+        # deleted session stayed in the file forever.
+        c.execute("DELETE FROM chunks WHERE session_id=?", (session_id,))
         c.execute("DELETE FROM sessions WHERE id=?", (session_id,))
         conn.commit()
         conn.close()
