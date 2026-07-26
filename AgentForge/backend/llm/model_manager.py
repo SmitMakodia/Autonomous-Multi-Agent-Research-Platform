@@ -23,7 +23,15 @@ class ModelManager:
             "-ngl", "99",
             "-fa", "on",
             "--ctx-size", "10000",
-            "--host", "0.0.0.0",
+            # Qwen3.5 is a reasoning model and will otherwise think until it exhausts
+            # max_tokens - measured at 4096 thinking tokens with no answer produced at all
+            # on a trivial prompt. The server injects the end-of-thinking tag at the budget,
+            # which keeps the visible reasoning stream the UI is built around while
+            # guaranteeing an answer follows.
+            "--reasoning-budget", "512",
+            # Loopback: llama-server has no auth and exposes the raw model. Only the
+            # backend on this machine ever talks to it.
+            "--host", "127.0.0.1",
             "--port", "8000",
             "-np", "1"
         ]

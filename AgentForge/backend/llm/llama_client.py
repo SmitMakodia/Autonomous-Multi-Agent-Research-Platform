@@ -26,11 +26,29 @@ class LlamaClient:
                         try:
                             data = json.loads(data_str)
                             delta = data.get("choices", [{}])[0].get("delta", {})
-                            
+
+                            # Newer llama.cpp builds parse the model's thinking block
+                            # server-side and stream it as `reasoning_content`, so the
+                            # <think> tags never reach `content` and the tag state machine
+                            # below sees nothing to split. Take the pre-parsed field when
+                            # it is offered; fall back to tag parsing for older builds and
+                            # for models the server does not know how to split.
+                            reasoning = delta.get("reasoning_content")
+                            if reasoning:
+                                yield {"type": "reasoning", "content": reasoning}
+
                             content = delta.get("content")
                             if content:
                                 buffer += content
-                                
+
+                                # When the server ends the thinking block itself - either
+                                # by native parsing or by hitting --reasoning-budget - the
+                                # closing tag arrives in `content` with no opening tag to
+                                # match, so the state machine below would pass it through
+                                # into the visible answer.
+                                if not is_thinking and "</think>" in buffer:
+                                    buffer = buffer.replace("</think>", "")
+
                                 while True:
                                     if not is_thinking:
                                         if "<think>" in buffer:
