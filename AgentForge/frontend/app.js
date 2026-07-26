@@ -1,3 +1,9 @@
+// Every innerHTML sink below carries untrusted data: model output is derived from scraped
+// pages, the RAG context block renders raw scraped text, and source cards interpolate
+// third-party URLs straight into href. marked has had no built-in sanitizer since v5, so
+// nothing was stopping a scraped page from running script in this origin.
+const clean = (html) => DOMPurify.sanitize(html, { ADD_ATTR: ['target'] });
+
 const canvas = document.getElementById('bg-canvas');
 const ctx = canvas.getContext('2d');
 
@@ -159,13 +165,13 @@ function updateFileListUI() {
     currentFiles.forEach((file, index) => {
         const fileItem = document.createElement('div');
         fileItem.className = 'file-item';
-        fileItem.innerHTML = `
+        fileItem.innerHTML = clean(`
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
             <span>${file.name}</span>
             <button type="button" class="remove-file-btn" data-index="${index}">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
-        `;
+        `);
         fileList.appendChild(fileItem);
     });
 
@@ -245,6 +251,13 @@ function appendMessage(role, content) {
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 22h20L12 2z"/></svg>
                 </div>
             </div>
+            <div class="thinking-process" style="display:none;">
+                <div class="thinking-header">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"></path><path d="M10 22h4"></path><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"></path></svg>
+                    <span>Reasoning</span>
+                </div>
+                <div class="thinking-content"></div>
+            </div>
             <div class="message-content"></div>
             <div class="message-actions" style="display:none;">
                 <button class="copy-msg-btn" title="Copy full response">
@@ -270,12 +283,21 @@ function appendMessage(role, content) {
     const contentDiv = msgDiv.querySelector('.message-content');
     
     if (role === 'assistant') {
-        const parsedHtml = marked.parse(content);
+        const parsedHtml = clean(marked.parse(content));
         contentDiv.innerHTML = parsedHtml;
         contentDiv.querySelectorAll('pre code').forEach((block) => {
             hljs.highlightElement(block);
         });
         addCopyButtons(contentDiv);
+
+        // Click the Reasoning header to expand the collapsed thinking block.
+        const thinkingHeader = msgDiv.querySelector('.thinking-header');
+        const thinkingBody = msgDiv.querySelector('.thinking-content');
+        if (thinkingHeader && thinkingBody) {
+            thinkingHeader.addEventListener('click', () => {
+                thinkingBody.classList.toggle('expanded');
+            });
+        }
 
         const copyMsgBtn = msgDiv.querySelector('.copy-msg-btn');
         copyMsgBtn.addEventListener('click', () => {
@@ -366,10 +388,10 @@ async function loadSessionHistory(id) {
             data.messages.forEach(msg => {
                 const { contentDiv: responseContainer, thinkingContainer, thinkingContent, messageActions, msgDiv, messageExtras } = appendMessage(msg.role, msg.content);
                 if (msg.role === 'assistant') {
-                    if (msg.reasoning) {
+                    if (msg.reasoning && thinkingContainer && thinkingContent) {
                         thinkingContainer.style.display = 'block';
                         thinkingContent.classList.add('finished');
-                        thinkingContent.innerHTML = marked.parse(msg.reasoning);
+                        thinkingContent.innerHTML = clean(marked.parse(msg.reasoning));
                     }
                     
                     if (msg.sources) {
@@ -393,7 +415,7 @@ async function loadSessionHistory(id) {
                                         </a>`;
                                 });
                                 sourcesHtml += `</div></div>`;
-                                if (messageExtras) messageExtras.innerHTML += sourcesHtml;
+                                if (messageExtras) messageExtras.innerHTML += clean(sourcesHtml);
                             }
                         } catch(e) {}
                     }
@@ -408,9 +430,9 @@ async function loadSessionHistory(id) {
                                 <div style="white-space: pre-wrap; font-family: var(--font-mono); opacity: 0.8;">${msg.context}</div>
                             </div>
                         `;
-                        if (messageExtras) messageExtras.innerHTML += contextHtml;
+                        if (messageExtras) messageExtras.innerHTML += clean(contextHtml);
                     }
-                    
+
                     if (messageActions) {
                         messageActions.style.display = 'flex';
                         msgDiv.querySelector('.copy-msg-btn').onclick = () => {
@@ -451,14 +473,15 @@ window.addEventListener('DOMContentLoaded', () => {
 function updateAgentStatus(statusText, state = 'running') {
     const li = document.createElement('li');
     li.className = state;
-    li.innerHTML = `
+    // statusText carries tool names and filenames echoed back from the server
+    li.innerHTML = clean(`
         <div class="agent-icon ${state}">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><path d="M12 7v4"></path><line x1="8" y1="16" x2="8" y2="16"></line><line x1="16" y1="16" x2="16" y2="16"></line>
             </svg>
         </div>
         <span>${statusText}</span>
-    `;
+    `);
     
     if (agentStatusList.children.length > 2) {
         agentStatusList.removeChild(agentStatusList.firstChild);
@@ -563,20 +586,25 @@ async function handlePromptSubmit(e) {
                     updateAgentStatus(parsed.data, 'running');
                 } 
                 else if (parsed.event === 'reasoning') {
-                    thinkingContainer.style.display = 'block';
+                    // Accumulate before touching the DOM. When the thinking elements were
+                    // missing from the template, this handler threw on its first line and the
+                    // outer catch silently discarded the content along with it.
                     fullReasoning += parsed.data;
-                    thinkingContent.innerHTML = marked.parse(fullReasoning);
-                    if (!firstTokenReceived) {
-                        thinkingContent.scrollTop = thinkingContent.scrollHeight;
+                    if (thinkingContainer) thinkingContainer.style.display = 'block';
+                    if (thinkingContent) {
+                        thinkingContent.innerHTML = clean(marked.parse(fullReasoning));
+                        if (!firstTokenReceived) {
+                            thinkingContent.scrollTop = thinkingContent.scrollHeight;
+                        }
                     }
                 }
                 else if (parsed.event === 'token') {
+                    fullResponse += parsed.data;
                     if (!firstTokenReceived) {
                         firstTokenReceived = true;
-                        thinkingContent.classList.add('finished');
+                        if (thinkingContent) thinkingContent.classList.add('finished');
                     }
-                    fullResponse += parsed.data;
-                    responseContainer.innerHTML = marked.parse(fullResponse);
+                    responseContainer.innerHTML = clean(marked.parse(fullResponse));
                     chatThread.scrollTop = chatThread.scrollHeight;
                 }
                 else if (parsed.event === 'done') {
@@ -606,7 +634,7 @@ async function handlePromptSubmit(e) {
                                 </a>`;
                         });
                         sourcesHtml += `</div></div>`;
-                        if (messageExtras) messageExtras.innerHTML += sourcesHtml;
+                        if (messageExtras) messageExtras.innerHTML += clean(sourcesHtml);
                     }
                     
                     if (parsed.data.context) {
@@ -619,9 +647,9 @@ async function handlePromptSubmit(e) {
                                 <div style="white-space: pre-wrap; font-family: var(--font-mono); opacity: 0.8;">${parsed.data.context}</div>
                             </div>
                         `;
-                        if (messageExtras) messageExtras.innerHTML += contextHtml;
+                        if (messageExtras) messageExtras.innerHTML += clean(contextHtml);
                     }
-                    
+
                     chatThread.scrollTop = chatThread.scrollHeight;
                     
                     // Attach full content to copy button
@@ -643,7 +671,7 @@ async function handlePromptSubmit(e) {
                 }
                 else if (parsed.event === 'error') {
                     updateAgentStatus('Error encountered', 'error');
-                    responseContainer.innerHTML += `<br><br><span style="color:var(--color-error)">Exception: ${parsed.data}</span>`;
+                    responseContainer.innerHTML += clean(`<br><br><span style="color:var(--color-error)">Exception: ${parsed.data}</span>`);
                     messageActions.style.display = 'flex';
                     if (activeEventSource) activeEventSource.close();
                     activeEventSource = null;
@@ -667,7 +695,7 @@ async function handlePromptSubmit(e) {
         
     } catch (err) {
         console.error(err);
-        responseContainer.innerHTML = `<span style="color:var(--color-error)">System Failure: ${err.message}</span>`;
+        responseContainer.innerHTML = clean(`<span style="color:var(--color-error)">System Failure: ${err.message}</span>`);
         updateAgentStatus('Failed to send query', 'error');
         sendBtn.style.display = 'flex';
         stopBtn.style.display = 'none';
