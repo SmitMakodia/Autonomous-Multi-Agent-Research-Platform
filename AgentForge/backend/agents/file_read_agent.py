@@ -5,27 +5,30 @@ from pathlib import Path
 from typing import List
 from .base_agent import BaseAgent, ContextChunk
 from config import UPLOADS_DIR
+from paths import UnsafePathError, resolve_upload
 
 class FileReadAgent(BaseAgent):
     name = "read_local_file"
     description = "Reads text content from a local file."
-    
+
     async def run(self, file_path: str, **kwargs) -> List[ContextChunk]:
         print(f"[FileReadAgent] Reading file: {file_path}")
         chunks = []
-        path = Path(file_path)
-        
+
+        # file_path arrives from an LLM tool call, so it is untrusted: confine it to the
+        # uploads directory before touching the disk.
+        try:
+            path = resolve_upload(UPLOADS_DIR, file_path)
+        except UnsafePathError as e:
+            print(f"[FileReadAgent] Refused unsafe path {file_path!r}: {e}")
+            return chunks
+
         if not path.exists():
-            # Check if it might just be the filename in the uploads directory
-            alt_path = Path(UPLOADS_DIR) / path.name
-            if alt_path.exists():
-                print(f"[FileReadAgent] File found in uploads directory: {alt_path}")
-                path = alt_path
-                file_path = str(alt_path)
-            else:
-                print(f"[FileReadAgent] File not found: {file_path}")
-                return chunks
-            
+            print(f"[FileReadAgent] File not found: {path}")
+            return chunks
+
+        file_path = str(path)
+
         try:
             content = ""
             if path.suffix in [".txt", ".md"]:
@@ -82,7 +85,9 @@ class FileReadAgent(BaseAgent):
                 lines = [line.strip() for line in content.splitlines()]
                 content = "\n".join([line for line in lines if line])
                 
-                print(f"[FileReadAgent] Extracted Content from {file_path}:\n{content}")
+                # Length only. Dumping full document text here is what put third-party
+                # PII from uploaded files into logs/log.log, which has no rotation.
+                print(f"[FileReadAgent] Extracted {len(content)} characters from {path.name}")
                 
                 chunk_size = 2000
                 for i in range(0, len(content), chunk_size):

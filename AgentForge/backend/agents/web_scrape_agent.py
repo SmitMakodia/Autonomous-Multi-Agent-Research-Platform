@@ -3,16 +3,26 @@ from bs4 import BeautifulSoup
 from markdownify import markdownify as md
 from typing import List
 from .base_agent import BaseAgent, ContextChunk
+from net_guard import UnsafeURLError, assert_public_url
 from crawl4ai import AsyncWebCrawler
 
 class WebScrapeAgent(BaseAgent):
     name = "web_scrape_url"
     description = "Scrapes a given URL and returns the content as markdown using Crawl4AI."
-    
+
     async def run(self, url: str, **kwargs) -> List[ContextChunk]:
-        print(f"[WebScrapeAgent] Deep scraping URL via Crawl4AI: {url}")
         chunks = []
-        
+
+        # The URL comes from an LLM tool call. Without this it can be aimed at loopback
+        # (the unauthenticated llama-server on :8000), the LAN, or cloud metadata.
+        try:
+            assert_public_url(url)
+        except UnsafeURLError as e:
+            print(f"[WebScrapeAgent] Refused unsafe URL {url!r}: {e}")
+            return chunks
+
+        print(f"[WebScrapeAgent] Deep scraping URL via Crawl4AI: {url}")
+
         def make_chunks(text, max_size=2000):
             c = []
             paragraphs = text.split('\n\n')

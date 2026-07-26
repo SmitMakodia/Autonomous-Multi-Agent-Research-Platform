@@ -1,6 +1,7 @@
 import asyncio
 from typing import List
 from .base_agent import BaseAgent, ContextChunk
+from net_guard import UnsafeURLError, assert_public_url
 from crawl4ai import AsyncWebCrawler
 from bs4 import BeautifulSoup
 from markdownify import markdownify as md
@@ -55,7 +56,15 @@ class WebSearchAgent(BaseAgent):
             
             async def fetch_and_parse(url):
                 scraped_chunks = []
-                
+
+                # Search results are third-party controlled, so these hrefs get the same
+                # guard as an LLM-supplied URL.
+                try:
+                    assert_public_url(url)
+                except UnsafeURLError as e:
+                    print(f"[WebSearchAgent] Refused unsafe result URL {url!r}: {e}")
+                    return scraped_chunks
+
                 def make_chunks(text, max_size=2000):
                     c = []
                     paragraphs = text.split('\n\n')
