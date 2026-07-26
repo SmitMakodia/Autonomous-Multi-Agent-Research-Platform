@@ -1,0 +1,57 @@
+{
+  "_provenance": {
+    "author": "Written by the project author for this benchmark. NOT an external or standard IR benchmark (not BEIR, MS MARCO, or similar).",
+    "purpose": "Measure whether the cosine-recall + BM25-rerank cascade surfaces the correct document for a query.",
+    "labelling_rule": "Each query has exactly one relevant document id. Documents are topically distinct so relevance is unambiguous.",
+    "known_limitations": [
+      "20 documents, 20 queries, single relevant document per query - far smaller than a real IR benchmark.",
+      "Documents are short and topically well separated, so this measures whether retrieval works at all, not how it behaves on near-duplicate or long-tail content.",
+      "Results are not comparable to published IR benchmark numbers and must not be presented as such.",
+      "Queries deliberately mix lexical overlap (favours BM25) with paraphrase (favours embeddings) to expose the cascade's weakness on the paraphrase cases."
+    ]
+  },
+  "documents": [
+    {"id": "D01", "text": "The Qwen3.5-4B model is distributed in GGUF format quantised to Q4_K_M. Quantisation reduces the weight precision to roughly four bits per parameter, shrinking the file to about 2.55 gigabytes so it fits comfortably in consumer GPU memory alongside a key-value cache."},
+    {"id": "D02", "text": "BAAI bge-small-en-v1.5 is a sentence embedding model producing 384-dimensional vectors. It is small enough to run on a CPU without a dedicated accelerator, which keeps GPU memory free for language model inference."},
+    {"id": "D03", "text": "Cosine similarity measures the angle between two vectors rather than their magnitude. Two documents with the same topic but very different lengths will still score highly, which is why it is preferred over Euclidean distance for text embeddings."},
+    {"id": "D04", "text": "BM25 is a lexical ranking function derived from the probabilistic relevance framework. It scores documents by term frequency saturated against document length, and unlike dense embeddings it cannot match a paraphrase that shares no vocabulary with the query."},
+    {"id": "D05", "text": "SQLite stores an entire database in a single file and requires no separate server process. Write operations take a file lock, so it suits single-writer workloads such as a desktop application but not high-concurrency web services."},
+    {"id": "D06", "text": "Server-sent events provide a one-way stream from server to browser over ordinary HTTP. Unlike WebSockets they cannot carry client-to-server messages, but they reconnect automatically and need no protocol upgrade."},
+    {"id": "D07", "text": "Playwright drives a real Chromium browser, executing JavaScript before the page content is read. This matters for sites that render their body client-side, where a plain HTTP fetch returns an empty shell."},
+    {"id": "D08", "text": "BeautifulSoup parses static HTML into a navigable tree. It executes no JavaScript, so it is fast and dependency-light but blind to content injected after page load."},
+    {"id": "D09", "text": "Optical character recognition converts pixels of rendered text back into character codes. Accuracy degrades with low resolution, skew, unusual typefaces, and handwriting, and is conventionally reported as character error rate."},
+    {"id": "D10", "text": "Video memory on a consumer graphics card is a hard limit. Loading two large neural networks at once will exceed eight gigabytes, so a system must either quantise aggressively or swap one model out before loading the other."},
+    {"id": "D11", "text": "Retrieval-augmented generation injects retrieved passages into the prompt so the model answers from supplied evidence rather than parametric memory. It reduces but does not eliminate fabrication, because the model can still misread or over-extend the passages."},
+    {"id": "D12", "text": "A tokeniser splits text into subword units before the model sees it. Different model families use different vocabularies, so a token count computed with one tokeniser is only an approximation for another."},
+    {"id": "D13", "text": "Path traversal occurs when a program joins user-supplied input into a filesystem path without stripping directory components. A filename containing dot-dot segments then escapes the intended directory and reads or writes elsewhere."},
+    {"id": "D14", "text": "Server-side request forgery tricks a backend into making an HTTP request on the attacker's behalf. Because that request originates inside the network perimeter, it can reach loopback services and cloud metadata endpoints that are unreachable from outside."},
+    {"id": "D15", "text": "Cross-origin resource sharing headers tell a browser which other origins may read a response. A wildcard origin combined with credentialed requests defeats the protection entirely."},
+    {"id": "D16", "text": "Chunking splits a long document into passages small enough to embed. Fixed-size character splitting is simple but cuts sentences in half; splitting on paragraph boundaries preserves meaning at the cost of uneven chunk sizes."},
+    {"id": "D17", "text": "Time to first token measures the delay between submitting a prompt and the first piece of output appearing. It dominates perceived responsiveness far more than total generation time, because a user watching text stream in stops noticing the wait."},
+    {"id": "D18", "text": "A dead letter queue holds messages that could not be processed after repeated attempts. Without one, a permanently failing item either blocks the queue or vanishes silently."},
+    {"id": "D19", "text": "Idempotency means repeating an operation produces the same result as performing it once. Without an idempotency key, a client that retries a timed-out request can duplicate all of its side effects."},
+    {"id": "D20", "text": "Structured logging emits each event as a machine-readable record rather than a formatted sentence. This makes it possible to aggregate and filter by field afterwards, which free-text print statements do not support."}
+  ],
+  "queries": [
+    {"id": "Q01", "query": "How much disk space does the quantised language model take?", "relevant": "D01"},
+    {"id": "Q02", "query": "Which embedding model runs on CPU and what is its vector size?", "relevant": "D02"},
+    {"id": "Q03", "query": "Why use cosine similarity instead of Euclidean distance for text?", "relevant": "D03"},
+    {"id": "Q04", "query": "What is the weakness of BM25 when the query is worded differently?", "relevant": "D04"},
+    {"id": "Q05", "query": "Is SQLite suitable for many simultaneous writers?", "relevant": "D05"},
+    {"id": "Q06", "query": "Can server-sent events send data from the browser to the server?", "relevant": "D06"},
+    {"id": "Q07", "query": "Why do I need a headless browser for some websites?", "relevant": "D07"},
+    {"id": "Q08", "query": "What are the limitations of parsing HTML without running scripts?", "relevant": "D08"},
+    {"id": "Q09", "query": "How is the quality of text extraction from images normally reported?", "relevant": "D09"},
+    {"id": "Q10", "query": "What happens if two big models are loaded onto one 8GB card at the same time?", "relevant": "D10"},
+    {"id": "Q11", "query": "Does grounding a model in retrieved passages stop it making things up?", "relevant": "D11"},
+    {"id": "Q12", "query": "Why is a token count from one model only approximate for another?", "relevant": "D12"},
+    {"id": "Q13", "query": "How does a crafted filename let an upload write outside its folder?", "relevant": "D13"},
+    {"id": "Q14", "query": "How can a backend be tricked into reaching internal-only endpoints?", "relevant": "D14"},
+    {"id": "Q15", "query": "What is wrong with allowing any origin together with credentials?", "relevant": "D15"},
+    {"id": "Q16", "query": "What is the trade-off between fixed-size and paragraph-based splitting?", "relevant": "D16"},
+    {"id": "Q17", "query": "Which latency metric matters most for how fast a system feels?", "relevant": "D17"},
+    {"id": "Q18", "query": "Where do messages go when they cannot be processed after retries?", "relevant": "D18"},
+    {"id": "Q19", "query": "What stops a retried request from duplicating its side effects?", "relevant": "D19"},
+    {"id": "Q20", "query": "Why are plain print statements hard to aggregate later?", "relevant": "D20"}
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "_provenance": {
+    "author": "Written by the project author for this benchmark. NOT an external or standard benchmark.",
+    "purpose": "Measure whether the LLM tool router selects the correct tool for a prompt.",
+    "labelling_rule": "expected = the single tool a correct router should call. 'none' means the prompt is answerable from conversation/context alone and no tool should fire.",
+    "known_limitations": [
+      "Small sample (40 prompts), author-written, English only.",
+      "Prompts are unambiguous by construction; real user phrasing is messier, so accuracy here is an upper bound.",
+      "Class balance is deliberate, not representative of real traffic mix.",
+      "'none' is the hardest class in practice because the router is biased toward acting."
+    ]
+  },
+  "cases": [
+    {"id": "R01", "prompt": "What are the latest developments in fusion energy research this year?", "expected": "web_search"},
+    {"id": "R02", "prompt": "Search the web for current NVIDIA Blackwell GPU specifications.", "expected": "web_search"},
+    {"id": "R03", "prompt": "Who won the most recent Formula 1 championship?", "expected": "web_search"},
+    {"id": "R04", "prompt": "Find recent news about interest rate decisions.", "expected": "web_search"},
+    {"id": "R05", "prompt": "What is the current population of Tokyo?", "expected": "web_search"},
+    {"id": "R06", "prompt": "Look up today's weather forecast for London.", "expected": "web_search"},
+    {"id": "R07", "prompt": "Research the health effects of intermittent fasting.", "expected": "web_search"},
+    {"id": "R08", "prompt": "What are people saying about the latest Python release?", "expected": "web_search"},
+    {"id": "R09", "prompt": "Find information about quantum error correction breakthroughs.", "expected": "web_search"},
+    {"id": "R10", "prompt": "What is the market share of electric vehicles in Europe right now?", "expected": "web_search"},
+
+    {"id": "R11", "prompt": "Scrape https://example.com and summarise the page.", "expected": "web_scrape_url"},
+    {"id": "R12", "prompt": "Read the content at https://en.wikipedia.org/wiki/Retrieval-augmented_generation", "expected": "web_scrape_url"},
+    {"id": "R13", "prompt": "Extract the text from https://www.python.org/about/", "expected": "web_scrape_url"},
+    {"id": "R14", "prompt": "Fetch https://fastapi.tiangolo.com/ and tell me what it covers.", "expected": "web_scrape_url"},
+    {"id": "R15", "prompt": "Open this link and give me the key points: https://docs.pytest.org/en/stable/", "expected": "web_scrape_url"},
+    {"id": "R16", "prompt": "Go to https://github.com/ggerganov/llama.cpp and describe the project.", "expected": "web_scrape_url"},
+    {"id": "R17", "prompt": "Summarise the article at https://arxiv.org/abs/1706.03762", "expected": "web_scrape_url"},
+    {"id": "R18", "prompt": "Pull the content from https://sqlite.org/whentouse.html", "expected": "web_scrape_url"},
+
+    {"id": "R19", "prompt": "Read the file report.pdf that I uploaded and summarise it.", "expected": "read_local_file"},
+    {"id": "R20", "prompt": "Open data.csv and tell me how many rows it has.", "expected": "read_local_file"},
+    {"id": "R21", "prompt": "What does notes.txt contain?", "expected": "read_local_file"},
+    {"id": "R22", "prompt": "Parse the spreadsheet budget.xlsx and list the sheet names.", "expected": "read_local_file"},
+    {"id": "R23", "prompt": "Read through proposal.docx and extract the main argument.", "expected": "read_local_file"},
+    {"id": "R24", "prompt": "Summarise the slides in deck.pptx", "expected": "read_local_file"},
+    {"id": "R25", "prompt": "Look at config.json and explain the settings.", "expected": "read_local_file"},
+    {"id": "R26", "prompt": "Analyse the contents of readme.md in my uploads.", "expected": "read_local_file"},
+
+    {"id": "R27", "prompt": "Extract the text from the image invoice.png", "expected": "ocr_image"},
+    {"id": "R28", "prompt": "Run OCR on receipt.jpg and give me the total.", "expected": "ocr_image"},
+    {"id": "R29", "prompt": "What text is written in the picture diagram.webp?", "expected": "ocr_image"},
+    {"id": "R30", "prompt": "Read the handwriting in the scan note.jpeg", "expected": "ocr_image"},
+    {"id": "R31", "prompt": "Transcribe the words shown in screenshot.png", "expected": "ocr_image"},
+    {"id": "R32", "prompt": "Perform text recognition on the image quote.png", "expected": "ocr_image"},
+
+    {"id": "R33", "prompt": "Thanks, that was helpful.", "expected": "none"},
+    {"id": "R34", "prompt": "Can you rewrite your previous answer more concisely?", "expected": "none"},
+    {"id": "R35", "prompt": "What is 47 multiplied by 23?", "expected": "none"},
+    {"id": "R36", "prompt": "Explain the difference between a list and a tuple in Python.", "expected": "none"},
+    {"id": "R37", "prompt": "Summarise what we have discussed so far.", "expected": "none"},
+    {"id": "R38", "prompt": "Write a haiku about autumn.", "expected": "none"},
+    {"id": "R39", "prompt": "Translate 'good morning' into Spanish.", "expected": "none"},
+    {"id": "R40", "prompt": "Format your last response as a bulleted list instead.", "expected": "none"}
+  ]
+}
