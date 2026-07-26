@@ -6,6 +6,7 @@ from typing import List, Dict, Any
 from agents.base_agent import ContextChunk
 from .embedder import embedder
 from llm.memory_manager import get_connection
+import metrics
 
 class VectorStore:
     def add_chunks(self, session_id: str, chunks: List[ContextChunk]):
@@ -13,7 +14,8 @@ class VectorStore:
             return
 
         texts = [chunk.text for chunk in chunks]
-        embeddings = embedder.embed_texts(texts)
+        with metrics.stage("embed", n=len(texts), chars=sum(len(t) for t in texts)):
+            embeddings = embedder.embed_texts(texts)
 
         conn = get_connection()
         c = conn.cursor()
@@ -44,7 +46,8 @@ class VectorStore:
         if not rows:
             return []
 
-        query_embedding = np.array(embedder.embed_query(query_text))
+        with metrics.stage("embed.query"):
+            query_embedding = np.array(embedder.embed_query(query_text))
 
         scored_chunks = []
         for row in rows:
